@@ -1,0 +1,4 @@
+<div [className]="'main-container'">
+  <app-login *ngIf="isLogin$ | async"></app-login>
+  <app-signup *ngIf="!(isLogin$ | async)"></app-signup>
+</div>

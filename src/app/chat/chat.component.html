@@ -1,0 +1,96 @@
+<div class="main-container" (click)="onToggleChat($event)">
+  <div class="container" (click)="$event.stopPropagation()">
+    <main class="header-container">
+      <header [className]="'header'">
+        <button
+          [className]="'btn'"
+          type="button"
+          (click)="onToggleChat($event)"
+        >
+          <app-close-svg />
+        </button>
+      </header>
+      <div [className]="'main'" #main>
+        <ng-container *ngFor="let msg of messages; trackBy: msgIdentify">
+          <ng-container [ngSwitch]="msg.type">
+            <div
+              *ngSwitchCase="'notification'"
+              [className]="'message notification-message'"
+            >
+              <span [className]="'msg-header'">Notification</span>
+              <span [className]="'msg-footer'">{{ msg.message }}</span>
+            </div>
+            <div
+              *ngSwitchCase="'user'"
+              [className]="'message user-message'"
+              [ngClass]="{
+                active: user && msg.user && user.id === msg.user.id
+              }"
+            >
+              <span *ngIf="msg.user" [className]="'msg-header'"
+                >{{ msg.user.firstName }} {{ msg.user.lastName }}</span
+              >
+              <span [className]="'msg-footer'">{{ msg.message }}</span>
+            </div>
+            <div *ngSwitchCase="'guest'" [className]="'message guest-message'">
+              <span [className]="'msg-header'"
+                ><span [className]="'msg-header__tag'">[Guest]</span>
+                {{ msg.senderName }}</span
+              >
+              <span [className]="'msg-footer'">{{ msg.message }}</span>
+            </div>
+          </ng-container>
+        </ng-container>
+        <!-- <ng-template #notificationMsg>
+          <div [className]="'message notification-message'">
+            <span [className]="'msg-header'">Notification</span>
+            <span [className]="'msg-footer'"
+              >Guess who I’m having date tonight with? 😉</span
+            >
+          </div>
+        </ng-template>
+
+        <ng-template>
+          <div [className]="'message user-message'">
+            <span [className]="'msg-header'">Yourmomsboyfriend</span>
+            <span [className]="'msg-footer'"
+              >Guess who I’m having date tonight with? 😉</span
+            >
+          </div>
+        </ng-template> -->
+
+        <!-- <ng-template>
+          <div [className]="'message user-message active'">
+            <span [className]="'msg-header'">Yourmomsboyfriend</span>
+            <span [className]="'msg-footer'"
+              >Guess who I’m having date tonight with? 😉</span
+            >
+          </div>
+        </ng-template>
+
+        <ng-template>
+          <div [className]="'message guest-message'">
+            <span [className]="'msg-header'"
+              ><span [className]="'msg-header__tag'">[Guest]</span>
+              Yourmomsboyfrienddlksadkdasklds</span
+            >
+            <span [className]="'msg-footer'"
+              >Guess who I’m having date tonight with? 😉</span
+            >
+          </div>
+        </ng-template> -->
+      </div>
+    </main>
+    <footer [className]="'footer'">
+      <form [className]="'form'" [formGroup]="form" (ngSubmit)="onSubmit()">
+        <input
+          type="text"
+          [className]="'message-input'"
+          formControlName="message"
+          placeholder="Type a message..."
+        />
+        <button [className]="'btn'" type="submit"><app-send-svg /></button>
+      </form>
+    </footer>
+  </div>
+</div>

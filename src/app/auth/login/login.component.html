@@ -1,0 +1,30 @@
+<div class="container">
+  <form [formGroup]="form" [className]="'form'">
+    <input
+      type="text"
+      formControlName="email"
+      [className]="'control-input'"
+      placeholder="Email"
+    />
+    <input
+      type="password"
+      formControlName="password"
+      [className]="'control-input'"
+      placeholder="Password"
+    />
+    <button
+      [className]="'btn active'"
+      (click)="onLogin()"
+      [disabled]="!form.valid"
+      type="submit"
+    >
+      Login
+    </button>
+    <button [className]="'btn'" (click)="onSignUp()" type="button">
+      Sign Up
+    </button>
+    <button [className]="'btn'" (click)="onToDashboard()" type="button">
+      To Dashboard
+    </button>
+  </form>
+</div>

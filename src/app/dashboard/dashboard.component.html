@@ -1,0 +1,43 @@
+<div class="main-container">
+  <div [className]="'container'">
+    <form [formGroup]="form" [className]="'form'">
+      <div class="form-controls">
+        <button [className]="'btn'" (click)="onCreateRoom()">
+          Create Room
+        </button>
+      </div>
+      <div class="form-controls">
+        <input
+          type="text"
+          formControlName="peerIdControl"
+          [className]="'control-input'"
+          placeholder="Peer ID"
+        />
+        <button [className]="'btn'" (click)="onJoinRoom()">Join Room</button>
+      </div>
+      <div class="auth-container">
+        <ng-container
+          *ngIf="isLoggedIn; then authStatus; else loginBtn"
+        ></ng-container>
+        <ng-template #authStatus
+          ><span [className]="'auth-status'" *ngIf="user"
+            >User logged in:
+            <span [className]="'auth-status-name'"
+              >{{ user.type === "user" && user.firstName }}
+              {{ user.type === "user" && user.lastName }}</span
+            ></span
+          ><button [className]="'btn active'" (click)="onLogout()">
+            Logout
+          </button></ng-template
+        >
+        <ng-template #loginBtn>
+          <div class="form-controls">
+            <button [className]="'btn active'" (click)="onLogin()">
+              Login
+            </button>
+          </div>
+        </ng-template>
+      </div>
+    </form>
+  </div>
+</div>
