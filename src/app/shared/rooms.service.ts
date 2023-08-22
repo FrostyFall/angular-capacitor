@@ -1,29 +1,30 @@
 import { Injectable, inject } from '@angular/core';
+import { BehaviorSubject, Observable } from 'rxjs';
+
 import { ApiService } from './api.service';
 import { environment } from 'src/environments/environment.development';
 import { IRoom } from './interfaces/room.interface';
-import { BehaviorSubject } from 'rxjs';
 
 @Injectable({ providedIn: 'root' })
 export class RoomsService {
-  private apiService = inject(ApiService);
+  private readonly apiService = inject(ApiService);
 
   private roomSource = new BehaviorSubject<IRoom | null>(null);
   public room$ = this.roomSource.asObservable();
 
-  setRoom(room: IRoom) {
+  public setRoom(room: IRoom): void {
     this.roomSource.next(room);
   }
 
-  getRoom(): IRoom | null {
+  public getRoom(): IRoom | null {
     return this.roomSource.getValue();
   }
 
-  create(name: string) {
+  public create(name: string): Observable<IRoom> {
     return this.apiService.post<IRoom>(`${environment.apiUrl}/rooms`, { name });
   }
 
-  getByName(name: string) {
+  public getByName(name: string): Observable<IRoom> {
     return this.apiService.get<IRoom>(
       `${environment.apiUrl}/rooms?name=${name}`
     );

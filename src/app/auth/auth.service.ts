@@ -1,26 +1,25 @@
-import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
-import { BehaviorSubject, catchError, shareReplay, tap } from 'rxjs';
-import { environment } from 'src/environments/environment.development';
+import { BehaviorSubject, Observable, shareReplay, tap } from 'rxjs';
 import * as moment from 'moment';
-import { IAuthResponse } from './interfaces/auth-response.interface';
-import { LocalStorageService } from '../shared/local-storage.service';
+
+import { environment } from '../../environments/environment.development';
+import { SessionStorageService } from '../shared/session-storage.service';
 import { UsersService } from '../shared/users.service';
 import { ApiService } from '../shared/api.service';
+import { IAuthResponse } from './interfaces/auth-response.interface';
 
 @Injectable({
   providedIn: 'root',
 })
 export class AuthService {
-  // http = inject(HttpClient);
-  apiService = inject(ApiService);
-  localStorageService = inject(LocalStorageService);
-  usersService = inject(UsersService);
+  private readonly apiService = inject(ApiService);
+  private readonly sessionStorageService = inject(SessionStorageService);
+  private readonly usersService = inject(UsersService);
 
-  isLoginBs$ = new BehaviorSubject<boolean>(true);
-  isLogin$ = this.isLoginBs$.asObservable();
+  private isLoginBs$ = new BehaviorSubject<boolean>(true);
+  public isLogin$ = this.isLoginBs$.asObservable();
 
-  login(email: string, password: string) {
+  public login(email: string, password: string): Observable<IAuthResponse> {
     return this.apiService
       .post<IAuthResponse>(`${environment.apiUrl}/auth/login`, {
         email,
@@ -32,13 +31,13 @@ export class AuthService {
       );
   }
 
-  signUp(
+  public signUp(
     firstName: string,
     lastName: string,
     email: string,
     password: string,
     passwordConfirm: string
-  ) {
+  ): Observable<IAuthResponse> {
     return this.apiService
       .post<IAuthResponse>(`${environment.apiUrl}/auth/signup`, {
         firstName,
@@ -53,14 +52,14 @@ export class AuthService {
       );
   }
 
-  private setSession(authResult: IAuthResponse) {
+  private setSession(authResult: IAuthResponse): void {
     const expiresAt = moment().add(authResult.accessToken.expiresIn, 'second');
-    this.localStorageService.set('id_token', authResult.accessToken.token);
-    this.localStorageService.set(
+    this.sessionStorageService.set('id_token', authResult.accessToken.token);
+    this.sessionStorageService.set(
       'expires_at',
       JSON.stringify(expiresAt.valueOf())
     );
-    this.localStorageService.set(
+    this.sessionStorageService.set(
       'user',
       JSON.stringify({
         id: authResult.id,
@@ -70,21 +69,21 @@ export class AuthService {
     );
   }
 
-  logout() {
+  public logout(): void {
     this.usersService.setUser(null);
-    this.localStorageService.clear();
+    this.sessionStorageService.clear();
   }
 
-  public isLoggedIn() {
+  public isLoggedIn(): boolean {
     return moment().isBefore(this.getExpiration());
   }
 
-  isLoggedOut() {
+  public isLoggedOut(): boolean {
     return !this.isLoggedIn();
   }
 
-  getExpiration() {
-    const expiration = this.localStorageService.get('expires_at');
+  public getExpiration(): moment.Moment | null {
+    const expiration = this.sessionStorageService.get('expires_at');
 
     if (!expiration) return null;
 
@@ -92,12 +91,12 @@ export class AuthService {
     return moment(expiresAt);
   }
 
-  setIsLogin(value: boolean) {
+  public setIsLogin(value: boolean): void {
     this.isLoginBs$.next(value);
   }
 
-  retrieveUserFromStorage() {
-    const userStorage = this.localStorageService.get('user');
+  public retrieveUserFromStorage(): void {
+    const userStorage = this.sessionStorageService.get('user');
 
     if (!userStorage) return;
 

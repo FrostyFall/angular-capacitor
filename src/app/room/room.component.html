@@ -7,6 +7,9 @@
         autoplay
         [className]="'participant-video'"
         [muted]="true"
+        controls
+        playsinline
+        [attr.webkit-playsinline]="'webkit-playsinline'"
       ></video>
       <img
         [className]="'participant-avatar'"
@@ -18,24 +21,20 @@
         >{{ user?.firstName ?? "First Name" }}
         {{ user?.lastName ?? "Last Name" }}</span
       >
-      <!-- <ng-container
-        *ngIf="user$ | async; then defaultNickname; else templateName"
-      ></ng-container>
-      <ng-template #defaultNickname
-        ><span [className]="'participant-name'">Unknown</span></ng-template
-      >
-      <ng-template #userNickname
-        ><span [className]="'participant-name'">Unknown</span></ng-template
-      > -->
     </div>
     <div [className]="'participant-container'">
       <div [className]="'participant-media-status'"></div>
-      <video #remoteVideo autoplay [className]="'participant-video'"></video>
+      <video
+        #remoteVideo
+        autoplay
+        [className]="'participant-video'"
+        playsinline
+        [attr.webkit-playsinline]="'webkit-playsinline'"
+      ></video>
       <span [className]="'participant-name'">John Doe</span>
     </div>
   </main>
   <footer [className]="'room-controls-container'">
-    <!-- <button class="btn btn-primary m-3" (click)="makeCall()">Init call</button> -->
     <div [className]="'room-controls'">
       <button
         [className]="'control-btn'"

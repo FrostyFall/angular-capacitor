@@ -1,22 +1,16 @@
 import {
   AfterViewChecked,
-  AfterViewInit,
   ChangeDetectionStrategy,
-  ChangeDetectorRef,
   Component,
   ElementRef,
   EventEmitter,
   Input,
-  OnChanges,
   OnInit,
   Output,
-  SimpleChanges,
   ViewChild,
   inject,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { IMessage } from '../shared/interfaces/message.interface';
-import { SendSvgComponent } from '../shared/components/send-svg/svg.component';
 import {
   FormBuilder,
   FormGroup,
@@ -24,8 +18,11 @@ import {
   Validators,
 } from '@angular/forms';
 import { Socket } from 'ngx-socket-io';
+
+import { IMessage } from '../shared/interfaces/message.interface';
 import { IRoom } from '../shared/interfaces/room.interface';
 import { IUser } from '../shared/interfaces/user.interface';
+import { SendSvgComponent } from '../shared/components/send-svg/svg.component';
 import { CloseSvgComponent } from '../shared/components/close-svg/svg.component';
 
 @Component({
@@ -41,23 +38,18 @@ import { CloseSvgComponent } from '../shared/components/close-svg/svg.component'
   styleUrls: ['./chat.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class ChatComponent implements OnInit, OnChanges, AfterViewChecked {
-  @Input('messages') messages: IMessage[] = [];
-  @Input('room') room: IRoom | null = null;
-  @Input('user') user: IUser | null = null;
-  @Output('toggleChat') toggleChat = new EventEmitter();
-  cdRef = inject(ChangeDetectorRef);
+export class ChatComponent implements OnInit, AfterViewChecked {
+  private readonly fb = inject(FormBuilder);
+  private readonly socket = inject(Socket);
 
-  private fb = inject(FormBuilder);
-  private socket = inject(Socket);
+  @Input('messages') public messages: IMessage[] = [];
+  @Input('room') public room: IRoom | null = null;
+  @Input('user') public user: IUser | null = null;
+  @Output('toggleChat') public toggleChat = new EventEmitter();
 
-  form!: FormGroup;
+  public form!: FormGroup;
 
-  @ViewChild('main') main!: ElementRef<HTMLDivElement>;
-
-  ngOnChanges(changes: SimpleChanges): void {
-    console.log(changes['messages']);
-  }
+  @ViewChild('main') public main!: ElementRef<HTMLDivElement>;
 
   ngOnInit(): void {
     this.form = this.fb.group({ message: ['', Validators.required] });
@@ -67,12 +59,12 @@ export class ChatComponent implements OnInit, OnChanges, AfterViewChecked {
     this.main.nativeElement.scrollTop = this.main.nativeElement.scrollHeight;
   }
 
-  onToggleChat(e: Event) {
+  public onToggleChat(e: Event): void {
     e.stopPropagation();
     this.toggleChat.emit();
   }
 
-  onSubmit() {
+  public onSubmit(): void {
     if (this.user === null || this.room === null) return;
 
     const message = this.form.getRawValue().message;
@@ -87,7 +79,7 @@ export class ChatComponent implements OnInit, OnChanges, AfterViewChecked {
     this.form.reset();
   }
 
-  msgIdentify(index: number, item: IMessage) {
+  public msgIdentify(_: number, item: IMessage): number {
     return item.id;
   }
 }

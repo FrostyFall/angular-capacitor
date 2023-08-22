@@ -32,25 +32,25 @@
   border: none;
   color: #fff;
   font-size: 1rem;
-  background-color: #636363;
+  background-color: var(--background-secondary);
   padding: 0.75em;
   border-radius: 3px;
   cursor: pointer;
 
   &:hover {
-    background-color: darken(#636363, 1);
+    background-color: darken(var(--background-secondary), 1);
   }
 
   &.active:not([disabled]) {
-    background-color: #e28800;
+    background-color: var(--primary);
 
     &:hover {
-      background-color: darken(#e28800, 2);
+      background-color: darken(var(--primary), 2);
     }
   }
 
   &[disabled] {
-    background-color: #636363;
+    background-color: var(--background-secondary);
     cursor: not-allowed;
   }
 }

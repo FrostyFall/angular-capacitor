@@ -11,9 +11,10 @@ import {
   ReactiveFormsModule,
   Validators,
 } from '@angular/forms';
+import { Router } from '@angular/router';
+
 import { AuthService } from '../auth.service';
 import { ILoginForm } from '../interfaces/login-form.interface';
-import { Router } from '@angular/router';
 import { UsersService } from 'src/app/shared/users.service';
 
 @Component({
@@ -25,12 +26,12 @@ import { UsersService } from 'src/app/shared/users.service';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class LoginComponent implements OnInit {
-  fb = inject(FormBuilder);
-  router = inject(Router);
-  authService = inject(AuthService);
-  usersService = inject(UsersService);
+  private readonly fb = inject(FormBuilder);
+  private readonly router = inject(Router);
+  private readonly authService = inject(AuthService);
+  private readonly usersService = inject(UsersService);
 
-  form!: FormGroup<ILoginForm>;
+  public form!: FormGroup<ILoginForm>;
 
   ngOnInit(): void {
     this.form = this.fb.nonNullable.group({
@@ -39,7 +40,7 @@ export class LoginComponent implements OnInit {
     });
   }
 
-  onLogin() {
+  public onLogin(): void {
     const { email, password } = this.form.getRawValue();
     this.authService.login(email, password).subscribe({
       next: (val) => {
@@ -53,11 +54,11 @@ export class LoginComponent implements OnInit {
     });
   }
 
-  onSignUp() {
+  public onSignUp(): void {
     this.authService.setIsLogin(false);
   }
 
-  onToDashboard() {
+  public onToDashboard(): void {
     this.router.navigate(['']);
   }
 }

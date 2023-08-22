@@ -11,30 +11,14 @@ import {
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import {
-  Observable,
-  combineLatest,
-  combineLatestAll,
-  filter,
-  first,
-  switchMap,
-} from 'rxjs';
+import { ReactiveFormsModule } from '@angular/forms';
+import { ActivatedRoute, Router } from '@angular/router';
+import { Observable, filter, first, switchMap } from 'rxjs';
+import { Socket } from 'ngx-socket-io';
+
 import { CallService } from '../shared/call.service';
-import {
-  FormBuilder,
-  FormControl,
-  FormGroup,
-  ReactiveFormsModule,
-} from '@angular/forms';
-import {
-  ActivatedRoute,
-  ActivatedRouteSnapshot,
-  Router,
-  RouterModule,
-} from '@angular/router';
 import { UsersService } from '../shared/users.service';
 import { IUser } from '../shared/interfaces/user.interface';
-import { Socket } from 'ngx-socket-io';
 import { RoomsService } from '../shared/rooms.service';
 import { IRoom } from '../shared/interfaces/room.interface';
 import { RoomMembersService } from '../shared/room-members.service';
@@ -59,33 +43,32 @@ import { IMessage } from '../shared/interfaces/message.interface';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class RoomComponent implements OnInit, OnDestroy {
-  private callService = inject(CallService);
-  private activatedRoute = inject(ActivatedRoute);
-  private usersService = inject(UsersService);
-  private roomsService = inject(RoomsService);
-  private roomMembersService = inject(RoomMembersService);
-  private destroyRef = inject(DestroyRef);
-  private authService = inject(AuthService);
-  private cdRef = inject(ChangeDetectorRef);
-  private router = inject(Router);
-  private socket = inject(Socket);
+  private readonly callService = inject(CallService);
+  private readonly activatedRoute = inject(ActivatedRoute);
+  private readonly usersService = inject(UsersService);
+  private readonly roomsService = inject(RoomsService);
+  private readonly roomMembersService = inject(RoomMembersService);
+  private readonly destroyRef = inject(DestroyRef);
+  private readonly authService = inject(AuthService);
+  private readonly cdRef = inject(ChangeDetectorRef);
+  private readonly router = inject(Router);
+  private readonly socket = inject(Socket);
 
   public isCallStarted$!: Observable<boolean>;
   public user!: IUser | null;
   public room!: IRoom | null;
-
-  messages: IMessage[] = [];
+  public messages: IMessage[] = [];
 
   @ViewChild('localVideo', { static: true })
-  localVideo!: ElementRef<HTMLVideoElement>;
+  public localVideo!: ElementRef<HTMLVideoElement>;
   @ViewChild('remoteVideo', { static: true })
-  remoteVideo!: ElementRef<HTMLVideoElement>;
+  public remoteVideo!: ElementRef<HTMLVideoElement>;
 
-  isVideoOn = true;
-  isMicroOn = true;
-  isChatOpened = false;
+  public isVideoOn = true;
+  public isMicroOn = true;
+  public isChatOpened = false;
 
-  ngOnInit() {
+  ngOnInit(): void {
     const roomName = this.activatedRoute.snapshot.params['room'];
     if (!roomName) {
       this.router.navigate([''], {
@@ -141,12 +124,10 @@ export class RoomComponent implements OnInit, OnDestroy {
         this.remoteVideo.nativeElement.srcObject = stream;
       });
 
-    // SOCKET.IO
     this.socket
       .fromEvent('messages')
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((data: any) => {
-        console.log('Received Messages', data);
         this.messages = data;
         this.cdRef.markForCheck();
       });
@@ -156,12 +137,9 @@ export class RoomComponent implements OnInit, OnDestroy {
     this.callService.destroyPeer();
     this.callService.closeMediaCall();
     if (this.user === null || this.room === null) return;
-    // this.roomMembersService
-    //   .removeMember(this.user.id, this.room.id)
-    //   .subscribe();
   }
 
-  async onCopyToClipboard() {
+  public async onCopyToClipboard(): Promise<void> {
     const roomName = this.activatedRoute.snapshot.params['room'];
     if (roomName) {
       await navigator.clipboard.writeText(roomName);
@@ -169,27 +147,26 @@ export class RoomComponent implements OnInit, OnDestroy {
     }
   }
 
-  onShareScreen() {
+  public onShareScreen(): void {
     this.callService.shareScreen();
   }
 
-  public endCall() {
-    // TODO: delete room member from db
+  public endCall(): void {
     this.callService.closeMediaCall();
     this.router.navigate([''], {
       relativeTo: this.activatedRoute,
     });
   }
 
-  toggleMicro() {
+  public toggleMicro(): void {
     this.isMicroOn = !this.isMicroOn;
   }
 
-  toggleVideo() {
+  public toggleVideo(): void {
     this.isVideoOn = !this.isVideoOn;
   }
 
-  toggleChat() {
+  public toggleChat(): void {
     this.isChatOpened = !this.isChatOpened;
   }
 }

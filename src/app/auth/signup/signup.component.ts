@@ -1,4 +1,9 @@
-import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  DestroyRef,
+  inject,
+} from '@angular/core';
 import { CommonModule } from '@angular/common';
 import {
   FormBuilder,
@@ -7,9 +12,11 @@ import {
   Validators,
 } from '@angular/forms';
 import { Router } from '@angular/router';
+
 import { UsersService } from 'src/app/shared/users.service';
 import { AuthService } from '../auth.service';
 import { ISignUpForm } from '../interfaces/signup-form.interface';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 @Component({
   selector: 'app-signup',
@@ -20,12 +27,13 @@ import { ISignUpForm } from '../interfaces/signup-form.interface';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class SignupComponent {
-  fb = inject(FormBuilder);
-  router = inject(Router);
-  authService = inject(AuthService);
-  usersService = inject(UsersService);
+  private readonly fb = inject(FormBuilder);
+  private readonly router = inject(Router);
+  private readonly authService = inject(AuthService);
+  private readonly usersService = inject(UsersService);
+  private readonly destroyRef = inject(DestroyRef);
 
-  form!: FormGroup<ISignUpForm>;
+  public form!: FormGroup<ISignUpForm>;
 
   ngOnInit(): void {
     this.form = this.fb.nonNullable.group({
@@ -51,11 +59,11 @@ export class SignupComponent {
     });
   }
 
-  onLogin() {
+  public onLogin(): void {
     this.authService.setIsLogin(true);
   }
 
-  onSignUp() {
+  public onSignUp(): void {
     const { firstName, lastName, email, password, passwordConfirm } =
       this.form.getRawValue();
     if (password !== passwordConfirm) {
@@ -65,6 +73,7 @@ export class SignupComponent {
 
     this.authService
       .signUp(firstName, lastName, email, password, passwordConfirm)
+      .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (val) => {
           const { accessToken, ...userData } = val;
@@ -77,7 +86,7 @@ export class SignupComponent {
       });
   }
 
-  onToDashboard() {
+  public onToDashboard(): void {
     this.router.navigate(['']);
   }
 }

@@ -1,7 +1,9 @@
-import { Injectable, inject } from '@angular/core';
+import { DestroyRef, Injectable, inject } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { BehaviorSubject } from 'rxjs';
 import Peer, { MediaConnection, PeerJSOption } from 'peerjs';
-import { BehaviorSubject, Subject } from 'rxjs';
 import { v4 as uuidv4 } from 'uuid';
+
 import { RoomMembersService } from './room-members.service';
 import { RoomsService } from './rooms.service';
 import { UsersService } from './users.service';
@@ -16,13 +18,15 @@ function timer(time: number): Promise<void> {
   providedIn: 'root',
 })
 export class CallService {
+  private readonly roomMembersService = inject(RoomMembersService);
+  private readonly roomsService = inject(RoomsService);
+  private readonly usersService = inject(UsersService);
+  private readonly destroyRef = inject(DestroyRef);
   private peer!: Peer;
   private mediaCall!: MediaConnection;
   private currentPeer!: any;
-  // private peerList: any[] = [];
-  private roomMembersService = inject(RoomMembersService);
-  private roomsService = inject(RoomsService);
-  private usersService = inject(UsersService);
+  public shareSourceId: any = null;
+  public sources: any = [];
 
   private localStreamBs = new BehaviorSubject<MediaStream | null>(null);
   public localStream$ = this.localStreamBs.asObservable();
@@ -53,66 +57,50 @@ export class CallService {
 
       if (!roomId) return;
 
-      this.roomMembersService.getMembers(roomId).subscribe(async (members) => {
-        const membersNum = members.length;
-        console.log(membersNum);
+      this.roomMembersService
+        .getMembers(roomId)
+        .pipe(takeUntilDestroyed(this.destroyRef))
+        .subscribe(async (members) => {
+          const membersNum = members.length;
 
-        let id = null;
-        try {
-          if (membersNum === 1) {
-            id = peerId;
-          } else {
-            id = uuidv4();
+          let id = null;
+          try {
+            if (membersNum === 1) {
+              id = peerId;
+            } else {
+              id = uuidv4();
+            }
+            this.peer = new Peer(id, peerJsOptions);
+            await timer(1000);
+
+            await this.enableCallAnswer();
+            if (membersNum !== 1) {
+              await this.establishMediaCall(peerId);
+            }
+          } catch (error) {
+            console.error(error);
           }
-          this.peer = new Peer(id, peerJsOptions);
-          // FIX: DO SOMETHING WITH THIS SHIT
-          await timer(1000);
-
-          console.log('Peer ID', id);
-          console.log('Room ID', peerId);
-          // this.enableCallAnswer();
-          // this.establishMediaCall(peerId);
-          await this.enableCallAnswer();
-          if (membersNum !== 1) {
-            await this.establishMediaCall(peerId);
-          }
-        } catch (error) {
-          console.error(error);
-        }
-      });
-
-      // try {
-      //   let id = peerId ?? uuidv4();
-      //   this.peer = new Peer(id, peerJsOptions);
-      //   return id;
-      // } catch (error) {
-      //   console.error(error);
-      // }
+        });
     }
   }
 
-  // Create room
-  public async enableCallAnswer() {
+  public async enableCallAnswer(): Promise<void> {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
-        video: true,
+        video: {
+          facingMode: 'user',
+        },
         audio: true,
       });
       this.localStreamBs.next(stream);
 
       this.peer.on('call', (call) => {
-        // Send local video when other caller calls
         this.mediaCall = call;
         this.mediaCall.answer(stream);
 
-        // Display caller video in #remoteVideo
         this.mediaCall.on('stream', (remoteStream) => {
-          console.log('stream');
-          // if (!this.peerList.includes(this.mediaCall.peer)) {
           this.remoteStreamBs.next(remoteStream);
           this.currentPeer = this.mediaCall.peerConnection;
-          // this.peerList.push(this.mediaCall.peer);
-          // }
         });
         this.mediaCall.on('error', (err) => {
           console.error(err);
@@ -120,16 +108,16 @@ export class CallService {
         this.mediaCall.on('close', () => this.onCallClose());
       });
     } catch (ex) {
-      console.log('CREATE ERROR');
       console.error(ex);
     }
   }
 
-  // Join existing room
-  public async establishMediaCall(remotePeerId: string) {
+  public async establishMediaCall(remotePeerId: string): Promise<void> {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
-        video: true,
+        video: {
+          facingMode: 'user',
+        },
         audio: true,
       });
 
@@ -145,26 +133,20 @@ export class CallService {
       }
       this.localStreamBs.next(stream);
 
-      // Display caller video in #remoteVideo
       this.mediaCall.on('stream', (remoteStream) => {
-        console.log('stream');
-        // if (!this.peerList.includes(this.mediaCall.peer)) {
         this.remoteStreamBs.next(remoteStream);
         this.currentPeer = this.mediaCall.peerConnection;
-        // this.peerList.push(this.mediaCall.peer);
-        // }
       });
       this.mediaCall.on('error', (err) => {
         console.error(err);
       });
       this.mediaCall.on('close', () => this.onCallClose());
     } catch (ex) {
-      console.log('JOIN ERROR');
       console.error(ex);
     }
   }
 
-  async shareScreen() {
+  public async shareScreen(): Promise<void> {
     try {
       const displayMedia = await navigator.mediaDevices.getDisplayMedia({
         audio: {
@@ -172,56 +154,49 @@ export class CallService {
           noiseSuppression: true,
         },
       });
-      // screen stream
+
       const videoTrack = displayMedia.getVideoTracks()[0];
       videoTrack.onended = () => {
         this.stopScreenShare();
       };
 
-      // this.localStreamBs.value.getVideoTracks()[0] - camera stream
       if (this.localStreamBs.value) {
         this.localStreamBs.value.getVideoTracks()[0];
       }
-      // replace sender with screen track
       const sender = this.currentPeer
         .getSenders()
         .find((s: any) => s.track.kind === videoTrack.kind);
       sender.replaceTrack(videoTrack);
     } catch (err) {
-      console.log('Unable to get display media ' + err);
+      console.error('Unable to get display media', err);
     }
   }
 
-  private stopScreenShare() {
+  private stopScreenShare(): void {
     if (!this.localStreamBs.value) {
       return;
     }
     const videoTrack = this.localStreamBs.value.getVideoTracks()[0];
-    // replace sender with localStream
     const sender = this.currentPeer
       .getSenders()
       .find((s: any) => s.track.kind === videoTrack.kind);
     sender.replaceTrack(videoTrack);
   }
 
-  private onCallClose() {
+  private onCallClose(): void {
     if (this.remoteStreamBs.value !== null) {
       this.remoteStreamBs.value.getTracks().forEach((track) => {
-        console.log('remote closing');
         track.stop();
       });
     }
     if (this.localStreamBs.value !== null) {
       this.localStreamBs.value.getTracks().forEach((track) => {
-        console.log('local closing');
         track.stop();
       });
     }
-    // TODO: remove user
     const user = this.usersService.getUser();
     const room = this.roomsService.getRoom();
 
-    console.log('here =>', user, room);
     if (user !== null && room !== null) {
       this.roomMembersService
         .removeMember(user.id, room.id)
@@ -229,14 +204,14 @@ export class CallService {
     }
   }
 
-  public closeMediaCall() {
+  public closeMediaCall(): void {
     this.mediaCall?.close();
     if (!this.mediaCall) {
       this.onCallClose();
     }
   }
 
-  public destroyPeer() {
+  public destroyPeer(): void {
     this.mediaCall?.close();
     this.peer?.disconnect();
     this.peer?.destroy();
